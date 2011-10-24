@@ -1,0 +1,6 @@
+
+A ladspa plugin that waits 'n' microseconds for each block.
+('n' is adjustable by an input port).
+
+Useful for debugging ladspa hosts.
+

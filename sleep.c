@@ -39,7 +39,7 @@ struct SleepLadspa{
 
 
 
-LADSPA_Descriptor SleepDescriptor={0};
+static LADSPA_Descriptor SleepDescriptor={0};
 
 
 const LADSPA_Descriptor *ladspa_descriptor(unsigned long index) {
@@ -98,8 +98,6 @@ void SleepL_run(
 
 void _init() {
     LADSPA_Descriptor *vd;
-    LADSPA_PortDescriptor *portdescriptors;
-    char **portnames;
 
     fprintf(stderr,"Initing sleep");
 
@@ -116,26 +114,36 @@ void _init() {
 
     vd->PortCount = 3;
 
-    portnames=calloc(vd->PortCount,sizeof(char*));
-    vd->PortRangeHints=calloc(vd->PortCount,sizeof(LADSPA_PortRangeHint));
+    {
+      LADSPA_PortRangeHint *hints = calloc(vd->PortCount,sizeof(LADSPA_PortRangeHint));
 
-    portdescriptors=malloc(vd->PortCount * sizeof(LADSPA_PortDescriptor));
+      hints[2].HintDescriptor=LADSPA_HINT_DEFAULT_0|LADSPA_HINT_BOUNDED_BELOW| LADSPA_HINT_BOUNDED_ABOVE;
+      hints[2].LowerBound=0.0f;
+      hints[2].UpperBound=1000.0f;
+      
+      vd->PortRangeHints = hints;
+    }
 
-    portdescriptors[0]=(const LADSPA_PortDescriptor)(LADSPA_PORT_INPUT|LADSPA_PORT_AUDIO);
-    portdescriptors[1]=(const LADSPA_PortDescriptor)(LADSPA_PORT_OUTPUT|LADSPA_PORT_AUDIO);
-    portdescriptors[2]=(const LADSPA_PortDescriptor)(LADSPA_PORT_INPUT|LADSPA_PORT_CONTROL);
+    {
+      char **portnames=calloc(vd->PortCount,sizeof(char*));
+      
+      portnames[0]=strdup("Audio in");
+      portnames[1]=strdup("Audio out");
+      portnames[2]=strdup("Usecs to sleep");
 
-    vd->PortRangeHints[2].HintDescriptor=LADSPA_HINT_BOUNDED_BELOW| LADSPA_HINT_BOUNDED_ABOVE;
-    vd->PortRangeHints[2].LowerBound=0.0f;
-    vd->PortRangeHints[2].UpperBound=1000000.0f;
+      vd->PortNames=( const char * const *)portnames;
+    }
     
-    portnames[0]=strdup("Audio in");
-    portnames[1]=strdup("Audio out");
-    portnames[2]=strdup("Usecs to sleep");
+    {
+      LADSPA_PortDescriptor *portdescriptors = malloc(vd->PortCount * sizeof(LADSPA_PortDescriptor));
+      
+      portdescriptors[0]=(const LADSPA_PortDescriptor)(LADSPA_PORT_INPUT|LADSPA_PORT_AUDIO);
+      portdescriptors[1]=(const LADSPA_PortDescriptor)(LADSPA_PORT_OUTPUT|LADSPA_PORT_AUDIO);
+      portdescriptors[2]=(const LADSPA_PortDescriptor)(LADSPA_PORT_INPUT|LADSPA_PORT_CONTROL);
 
-    vd->PortDescriptors=portdescriptors;
-    vd->PortNames=( const char * const *)portnames;
-
+      vd->PortDescriptors=portdescriptors;
+    }
+    
 
     vd->ImplementationData=NULL;
     vd->instantiate=SleepL_instantiate;
